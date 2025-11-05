@@ -413,31 +413,68 @@
     });
 
     // Save result card as image using html2canvas
-    $btnSaveImage.addEventListener('click', async ()=>{
-      // disable while capturing
-      $btnSaveImage.disabled = true;
-      $btnSaveImage.textContent = "Guardando...";
+// === Mejor guardado de la tarjeta con fondo y nombre grande ===
+$btnSaveImage.addEventListener('click', async () => {
+  $btnSaveImage.disabled = true;
+  $btnSaveImage.textContent = "Generando...";
 
-      try {
-        // ensure styles are applied & scroll into view for consistent capture
-        $resultCard.scrollIntoView({behavior:'smooth', block:'center'});
-        await new Promise(r => setTimeout(r, 220)); // tiny delay for paint
-        const canvas = await html2canvas($resultCard, { scale: 2, backgroundColor: null });
-        const link = document.createElement('a');
-        link.download = `plan-${(state.name||'amor').replace(/\s+/g,'_').toLowerCase()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+  try {
+    // Crear contenedor temporal para la imagen final
+    const temp = document.createElement('div');
+    temp.style.width = '720px';
+    temp.style.padding = '40px';
+    temp.style.borderRadius = '20px';
+    temp.style.background = 'linear-gradient(180deg, #fff7fb, #ffe6f1)';
+    temp.style.boxShadow = '0 10px 30px rgba(0,0,0,0.08)';
+    temp.style.fontFamily = 'Inter, sans-serif';
+    temp.style.color = '#333';
+    temp.style.textAlign = 'center';
+    temp.innerHTML = `
+      <h1 style="margin:0 0 12px;font-size:28px;color:#ff6fa3;">
+        🎀 Plan Cumpleañero de ${state.name || 'Amor'}
+      </h1>
+      <p style="color:#666;margin-bottom:24px;font-size:15px;">
+        Hecho para la amada maxima 💖 — ${new Date().toLocaleDateString()}
+      </p>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+        <div style="width:140px;height:140px;border-radius:16px;
+          background:linear-gradient(135deg,#ff6fa3,#ff9ec7);
+          display:flex;align-items:center;justify-content:center;
+          color:white;font-size:54px;font-weight:700;">
+          ${(state.picks[0] && state.picks[0].emoji) || '💖'}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:16px;">
+          ${state.picks.map(p => `
+            <div style="background:white;border:1px solid rgba(0,0,0,0.06);
+              border-radius:999px;padding:8px 14px;font-size:15px;
+              box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+              ${p.emoji} ${p.title}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(temp);
 
-        // small feedback animation
-        flashScreen();
-      } catch (err) {
-        console.error(err);
-        alert("Error al generar la imagen. Intenta de nuevo.");
-      } finally {
-        $btnSaveImage.disabled = false;
-        $btnSaveImage.textContent = "📸 Guardar plan";
-      }
-    });
+    // Convertir a imagen
+    await new Promise(r => setTimeout(r, 250)); // asegurar renderizado
+    const canvas = await html2canvas(temp, { scale: 2, backgroundColor: null });
+    const link = document.createElement('a');
+    link.download = `plan-${(state.name || 'amor').replace(/\s+/g, '_').toLowerCase()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    // Limpieza visual
+    flashScreen();
+    document.body.removeChild(temp);
+  } catch (err) {
+    console.error(err);
+    alert("Error al generar la imagen 😢");
+  } finally {
+    $btnSaveImage.disabled = false;
+    $btnSaveImage.textContent = "📸 Guardar plan";
+  }
+});
 
     // inicial
     (function smallInit(){ renderStepsUI(); })();
