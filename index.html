@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tu Plan Perfecto</title>
+  <style>
+    :root{
+      --bg1: #fff6fb;
+      --bg2: #fff0f3;
+      --accent: #ff6fa3;
+      --accent-2: #ffd6e8;
+      --muted: #6b6b6b;
+      --card: #ffffff;
+      --glass: rgba(255,255,255,0.6);
+      --radius: 14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%; margin:0; background: linear-gradient(180deg,var(--bg1),var(--bg2)); color:#222; overflow:hidden;}
+    .app{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      box-sizing:border-box;
+      position:relative;
+      z-index:1;
+    }
+
+    /* Particles canvas sits behind the UI */
+    canvas#particles {
+      position:fixed;
+      top:0;
+      left:0;
+      width:100vw;
+      height:100vh;
+      z-index:0;
+      pointer-events:none;
+    }
+
+    .card {
+      width:100%;
+      max-width:920px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.92));
+      border-radius:20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      padding:28px;
+      box-sizing:border-box;
+      backdrop-filter: blur(6px);
+      overflow:hidden;
+      position:relative;
+      z-index:2;
+      animation: cardIn .45s cubic-bezier(.2,.9,.2,1);
+    }
+
+    @keyframes cardIn {
+      from { transform: translateY(8px); opacity: .0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+
+    header.top {
+      display:flex;
+      gap:16px;
+      align-items:center;
+      margin-bottom:18px;
+    }
+    .logo{
+      width:62px;height:62px;border-radius:12px;
+      background:linear-gradient(135deg,var(--accent),#ffa6cc);
+      display:flex;align-items:center;justify-content:center;
+      color:white;font-weight:700;font-size:20px;box-shadow:0 6px 20px rgba(255,111,163,0.2);
+    }
+    h1{margin:0;font-size:20px;}
+    p.lead{margin:0;color:var(--muted);font-size:14px}
+
+    .screen{min-height:360px; display:grid; align-items:center;}
+    .center{display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;text-align:center;padding:18px;}
+
+    input[name="name"]{
+      padding:12px 14px;border-radius:12px;border:1px solid rgba(0,0,0,0.08);width:260px;font-size:16px;
+      outline:none;box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+    .btn{
+      padding:10px 16px;border-radius:10px;border:0;background:linear-gradient(90deg,var(--accent),#ff98c7);
+      color:white;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(255,111,163,0.18);
+    }
+    .muted{color:var(--muted);font-size:13px}
+
+    /* Steps */
+    .steps{
+      display:flex;gap:10px;align-items:center;justify-content:center;margin:8px 0 18px;
+    }
+    .step{
+      width:10px;height:10px;border-radius:10px;background:rgba(0,0,0,0.08);
+    }
+    .step.active{width:36px;border-radius:10px;background:linear-gradient(90deg,var(--accent),#ff98c7);height:10px;transition:width .28s ease;}
+
+    /* Cards */
+    .cards-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:14px;
+      padding:6px 0 12px;
+    }
+    .option{
+      background:var(--card);
+      border-radius:14px;
+      padding:16px;
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      cursor:pointer;
+      transition:transform .18s ease, box-shadow .18s ease;
+      border:1px solid rgba(0,0,0,0.03);
+      transform-origin:center;
+    }
+    .option:hover{ transform:translateY(-6px) scale(1.02); box-shadow:0 14px 30px rgba(0,0,0,0.06); }
+    .option .emoji{
+      font-size:34px;
+      width:56px;height:56px;border-radius:10px;background:var(--accent-2);display:flex;align-items:center;justify-content:center;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+    }
+    .option h3{margin:0;font-size:16px}
+    .option p{margin:4px 0 0;color:var(--muted);font-size:13px}
+
+    .footer-actions{display:flex;gap:8px;justify-content:center;margin-top:12px;}
+
+    /* Result card */
+    .result {
+      display:flex;
+      gap:18px;
+      align-items:center;
+      padding:18px;
+      border-radius:16px;
+      background:linear-gradient(90deg, rgba(255,111,163,0.08), rgba(255,200,230,0.06));
+      box-shadow: inset 0 -1px 0 rgba(255,255,255,0.6);
+      transition: transform .35s ease, opacity .35s ease;
+    }
+    .result.show { transform: translateY(0); opacity: 1; }
+    .result .big{
+      width:112px;height:112px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#ff98c7);display:flex;align-items:center;justify-content:center;color:white;font-size:42px;font-weight:700;
+    }
+    .result .info h2{margin:0 0 6px;font-size:18px}
+    .pill{
+      display:inline-block;padding:8px 10px;border-radius:999px;background:white;border:1px solid rgba(0,0,0,0.04);margin-right:8px;margin-top:8px;font-size:13px;
+    }
+
+    /* Save button inside result */
+    .save-btn {
+      padding:8px 12px;border-radius:10px;border:0;background:linear-gradient(90deg,#ffd27d,#ffb84d);
+      color:#3a2f0b;font-weight:700;cursor:pointer;box-shadow:0 6px 14px rgba(255,184,77,0.15);
+    }
+
+    /* small */
+    @media (max-width:600px){
+      .card{padding:18px}
+      .result{flex-direction:column;align-items:flex-start}
+      .result .big{width:88px;height:88px;font-size:34px}
+    }
+  </style>
+</head>
+<body>
+  <!-- particles canvas -->
+  <canvas id="particles"></canvas>
+
+  <div class="app">
+    <div class="card" role="application" aria-label="Tu Plan Perfecto">
+      <header class="top">
+        <div class="logo">🎀</div>
+        <div>
+          <h1>PLAN CUMPLE JI OME</h1>
+          <p class="lead">Configurador de plan para la maxima nuviada</p>
+        </div>
+      </header>
+
+      <main class="screen">
+        <!-- Screen A: Welcome / name -->
+        <section id="screen-welcome" class="center">
+          <div style="max-width:520px">
+            <h2 style="margin:0 0 6px">Bom dia mi cocain, te ves amada</h2>
+            <p class="muted" style="margin-bottom:14px">Pon tu nombre para maxima personalización</p>
+            <div style="display:flex;gap:10px;justify-content:center;">
+              <input name="name" id="input-name" placeholder="Escribe un nombre..." autocomplete="off" />
+              <button class="btn" id="btn-start">Empezar</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen B: Options -->
+        <section id="screen-options" style="display:none;">
+          <div style="text-align:center;">
+            <h2 id="step-title">Paso 1</h2>
+            <p class="muted" id="step-desc">Elige una opción</p>
+            <div class="steps" id="steps"></div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <div class="cards-grid" id="cards"></div>
+            <div class="footer-actions">
+              <button class="btn" id="btn-back" style="background:linear-gradient(90deg,#999,#666);">Atrás</button>
+              <button class="btn" id="btn-skip" style="background:transparent;color:var(--accent);border:1px solid rgba(255,111,163,0.15);">Saltar</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Screen C: Result -->
+        <section id="screen-result" style="display:none;">
+          <div style="text-align:center;margin-bottom:14px;">
+            <h2>PLAN CUMPLEAÑERO DEFINITIVO ✨</h2>
+            <p class="muted" id="result-sub"></p>
+          </div>
+
+          <div class="result" id="result-card" aria-live="polite" aria-atomic="true">
+            <div class="big" id="result-emoji">💖</div>
+            <div class="info">
+              <h2 id="result-title">Plan de [Nombre]</h2>
+              <p class="muted" id="result-desc">Tus elecciones están aquí abajo.</p>
+              <div id="result-tags" style="margin-top:8px;"></div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;">
+            <button class="btn" id="btn-restart" style="background:linear-gradient(90deg,#7bd389,#3fb66d);">Hacer de nuevo</button>
+            <button class="btn" id="btn-edit-name" style="background:linear-gradient(90deg,#ffd27d,#ffb84d);">Editar nombre</button>
+            <!-- Save image button -->
+            <button class="save-btn" id="btn-save-image" title="Guardar tarjeta como imagen">Guardar plan</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- html2canvas for image capture -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <script>
+    /************* CONFIG: Cambia aquí para editar opciones *************/
+    const OPTIONS = [
+      {
+        stepTitle: "Actividad del día 🌞",
+        stepDesc: "Elige la actividad para del día.",
+        items: [
+          { id: "m1", title: "Dia playonch", desc: "Ir a la playonch de barcelona y estar amados por ahi.", emoji: "🏖️" },
+          { id: "m2", title: "Caminata Collserola", desc: "Ir al mirador de collserola donde se ve toda Barcelona y amarnos.", emoji: "🥾" },
+          { id: "m3", title: "Sagrada Familia", desc: "Visitar la Sagrada Familia y ver el pene de joselin(Jesus).", emoji: "⛪" }
+        ]
+      },
+      {
+        stepTitle: "Comida o cena 🍽️",
+        stepDesc: "Elige dónde o qué comeremos.",
+        items: [
+          { id: "f1", title: "SUPER receta", desc: "Elegimos una SUPER receta para hacer en casa.", emoji: "👩🏼‍🍳" },
+          { id: "f2", title: "Sushi", desc: "Comer o cenar en sushi rico.", emoji: "🍣" },
+          { id: "f3", title: "Mexicano", desc: "Mexicano donde haya bien de quese.", emoji: "🌮" }
+        ]
+      },
+      {
+        stepTitle: "Plan de tarde/noche 🌙",
+        stepDesc: "Elige como acabamos el dionch.",
+        items: [
+          { id: "n1", title: "Noche de cine", desc: "Película en casa de amados (eso siempre), en cine o en un festival de cine.", emoji: "🎬" },
+          { id: "n2", title: "Tarde/Noche Compras", desc: "Nuviat financia si le queda dinero", emoji: "🛍️" },
+          { id: "n3", title: "Merendola cocain", desc: "Helado o crepes amados de merienda o post cena", emoji: "🥞" }
+        ]
+      }
+    ];
+    /********************************************************************/
+
+    // Estado
+    let state = { name: "", step: 0, picks: [] };
+
+    // DOM
+    const $welcome = document.getElementById('screen-welcome');
+    const $options = document.getElementById('screen-options');
+    const $result = document.getElementById('screen-result');
+    const $btnStart = document.getElementById('btn-start');
+    const $inputName = document.getElementById('input-name');
+    const $cards = document.getElementById('cards');
+    const $steps = document.getElementById('steps');
+    const $stepTitle = document.getElementById('step-title');
+    const $stepDesc = document.getElementById('step-desc');
+    const $btnBack = document.getElementById('btn-back');
+    const $btnSkip = document.getElementById('btn-skip');
+    const $resultEmoji = document.getElementById('result-emoji');
+    const $resultTitle = document.getElementById('result-title');
+    const $resultTags = document.getElementById('result-tags');
+    const $resultSub = document.getElementById('result-sub');
+    const $btnRestart = document.getElementById('btn-restart');
+    const $btnEditName = document.getElementById('btn-edit-name');
+    const $btnSaveImage = document.getElementById('btn-save-image');
+    const $resultCard = document.getElementById('result-card');
+
+    // Inicializar pasos visuales
+    function renderStepsUI(){
+      $steps.innerHTML = "";
+      for(let i=0;i<OPTIONS.length;i++){
+        const stepEl = document.createElement('div');
+        stepEl.className = 'step' + (i===state.step ? ' active' : '');
+        $steps.appendChild(stepEl);
+      }
+    }
+
+    // Render cards for current step
+    function renderCards(){
+      const cfg = OPTIONS[state.step];
+      $stepTitle.textContent = cfg.stepTitle;
+      $stepDesc.textContent = cfg.stepDesc;
+      $cards.innerHTML = "";
+      cfg.items.forEach(it => {
+        const el = document.createElement('div');
+        el.className = 'option';
+        el.tabIndex = 0;
+        el.setAttribute('role','button');
+        el.innerHTML = `
+          <div class="emoji">${it.emoji}</div>
+          <div>
+            <h3>${it.title}</h3>
+            <p>${it.desc}</p>
+          </div>
+        `;
+        el.addEventListener('click', ()=> selectOption(it));
+        el.addEventListener('keypress', (e)=>{ if(e.key==='Enter') selectOption(it); });
+        $cards.appendChild(el);
+      });
+    }
+
+    // Selecciona opción y avanza
+    function selectOption(item){
+      state.picks[state.step] = item;
+      if(state.step < OPTIONS.length - 1){
+        state.step++;
+        updateScreens();
+      } else {
+        // final
+        showResult();
+      }
+    }
+
+    // Mostrar resultado
+    function showResult(){
+      $welcome.style.display = 'none';
+      $options.style.display = 'none';
+      $result.style.display = '';
+      // Personalizar tarjeta
+      const name = state.name || 'Amor';
+      $resultTitle.textContent = `Plan cumpleañero de ${name}`;
+      $resultSub.textContent = `Hecho para la enamorada ${name}.`;
+      // Emoji grande: usa el emoji de la primera elección si existe
+      const emoji = (state.picks[0] && state.picks[0].emoji) || '💖';
+      $resultEmoji.textContent = emoji;
+      // tags para cada pick
+      $resultTags.innerHTML = '';
+      state.picks.forEach(p=>{
+        const el = document.createElement('span');
+        el.className = 'pill';
+        el.textContent = `${p.emoji} ${p.title}`;
+        $resultTags.appendChild(el);
+      });
+      renderStepsUI();
+
+      // small visual flourish: add a temporary "pop" and a burst of hearts
+      $resultCard.classList.add('show');
+      burstHearts();
+    }
+
+    function updateScreens(){
+      $welcome.style.display = 'none';
+      $options.style.display = '';
+      $result.style.display = 'none';
+      renderStepsUI();
+      renderCards();
+      $btnBack.style.display = state.step === 0 ? 'none' : '';
+    }
+
+    // Event handlers
+    $btnStart.addEventListener('click', ()=>{
+      const name = ($inputName.value || "").trim();
+      state.name = name;
+      state.step = 0;
+      state.picks = [];
+      updateScreens();
+    });
+    $inputName.addEventListener('keypress',(e)=>{ if(e.key==='Enter') $btnStart.click(); });
+
+    $btnBack.addEventListener('click', ()=>{
+      if(state.step > 0){
+        state.step--;
+        updateScreens();
+      } else {
+        $welcome.style.display = '';
+        $options.style.display = 'none';
+      }
+    });
+
+    $btnSkip.addEventListener('click', ()=>{
+      const cfg = OPTIONS[state.step];
+      selectOption(cfg.items[0]);
+    });
+
+    $btnRestart.addEventListener('click', ()=>{
+      state = { name: state.name, step: 0, picks: [] };
+      $welcome.style.display = 'none';
+      updateScreens();
+    });
+
+    $btnEditName.addEventListener('click', ()=>{
+      $welcome.style.display = '';
+      $options.style.display = 'none';
+      $result.style.display = 'none';
+      $inputName.value = state.name || '';
+      $inputName.focus();
+    });
+
+    // Save result card as image using html2canvas
+    $btnSaveImage.addEventListener('click', async ()=>{
+      // disable while capturing
+      $btnSaveImage.disabled = true;
+      $btnSaveImage.textContent = "Guardando...";
+
+      try {
+        // ensure styles are applied & scroll into view for consistent capture
+        $resultCard.scrollIntoView({behavior:'smooth', block:'center'});
+        await new Promise(r => setTimeout(r, 220)); // tiny delay for paint
+        const canvas = await html2canvas($resultCard, { scale: 2, backgroundColor: null });
+        const link = document.createElement('a');
+        link.download = `plan-${(state.name||'amor').replace(/\s+/g,'_').toLowerCase()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        // small feedback animation
+        flashScreen();
+      } catch (err) {
+        console.error(err);
+        alert("Error al generar la imagen. Intenta de nuevo.");
+      } finally {
+        $btnSaveImage.disabled = false;
+        $btnSaveImage.textContent = "📸 Guardar plan";
+      }
+    });
+
+    // inicial
+    (function smallInit(){ renderStepsUI(); })();
+
+    /************************ PARTICLES (HEARTS) *************************/
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let W = canvas.width = window.innerWidth;
+    let H = canvas.height = window.innerHeight;
+
+    function rand(min,max){ return Math.random()*(max-min)+min; }
+
+    // Heart particle factory
+    function createHeart(){
+      return {
+        x: rand(0, W),
+        y: rand(H*0.1, H), // spawn mostly in lower area or everywhere
+        vx: rand(-0.2, 0.2),
+        vy: rand(-0.3, -0.8),
+        size: rand(10, 22),
+        life: rand(180, 420),
+        alpha: rand(0.6, 1),
+        hue: 330 + rand(-20,20) // pinkish
+      };
+    }
+
+    const hearts = new Array(60).fill(0).map(()=> createHeart());
+
+    function drawHeart(x, y, size, alpha, hue){
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(size/20, size/20);
+      ctx.rotate(Math.sin(x*0.01 + y*0.01) * 0.25);
+      ctx.globalAlpha = alpha;
+      // draw simple heart using path
+      ctx.beginPath();
+      ctx.moveTo(0, -5);
+      ctx.bezierCurveTo(-12, -25, -45, -10, -45, 10);
+      ctx.bezierCurveTo(-45, 30, -20, 47, 0, 62);
+      ctx.bezierCurveTo(20, 47, 45, 30, 45, 10);
+      ctx.bezierCurveTo(45, -10, 12, -25, 0, -5);
+      ctx.closePath();
+      ctx.fillStyle = `hsla(${hue},85%,65%,1)`;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function animate(){
+      ctx.clearRect(0,0,W,H);
+      for(let i=0;i<hearts.length;i++){
+        const p = hearts[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.002; // slight gravity upwards (so slower rising)
+        p.life--;
+        p.alpha = Math.max(0, p.life / 420);
+
+        drawHeart(p.x, p.y, p.size, p.alpha, p.hue);
+
+        // recycle
+        if(p.y < -60 || p.x < -80 || p.x > W+80 || p.life <= 0){
+          hearts[i] = createHeart();
+          hearts[i].y = H + rand(10, H*0.2); // respawn lower so they float up
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Resize handler
+    window.addEventListener('resize', ()=>{
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    });
+
+    // small "burst" of hearts when result appears
+    function burstHearts(count = 18){
+      const burst = [];
+      for(let i=0;i<count;i++){
+        burst.push({
+          x: W/2 + rand(-120,120),
+          y: H/2 + rand(-60,60),
+          vx: rand(-3,3),
+          vy: rand(-6,-2),
+          size: rand(10,28),
+          life: 80 + Math.random()*40,
+          hue: 320 + rand(-30,30)
+        });
+      }
+      let t=0;
+      function runBurst(){
+        // draw on top of existing (we'll composite)
+        for(let i=0;i<burst.length;i++){
+          const b = burst[i];
+          b.x += b.vx;
+          b.y += b.vy;
+          b.vy += 0.18; // gravity
+          b.life--;
+          const a = Math.max(0, b.life / 120);
+          drawHeart(b.x, b.y, b.size, a, b.hue);
+        }
+        t++;
+        if(t < 90){
+          requestAnimationFrame(runBurst);
+        }
+      }
+      runBurst();
+    }
+
+    // small flash effect when saving image
+    function flashScreen(){
+      const flash = document.createElement('div');
+      flash.style.position = 'fixed';
+      flash.style.top = 0;
+      flash.style.left = 0;
+      flash.style.width = '100vw';
+      flash.style.height = '100vh';
+      flash.style.pointerEvents = 'none';
+      flash.style.background = 'radial-gradient(circle at center, rgba(255,255,255,0.7), rgba(255,255,255,0))';
+      flash.style.zIndex = 9999;
+      flash.style.opacity = '0';
+      flash.style.transition = 'opacity .4s ease';
+      document.body.appendChild(flash);
+      requestAnimationFrame(()=> flash.style.opacity = '1' );
+      setTimeout(()=> flash.style.opacity = '0', 150);
+      setTimeout(()=> document.body.removeChild(flash), 500);
+      // also a small burst
+      burstHearts(26);
+    }
+  </script>
+</body>
+</html>
